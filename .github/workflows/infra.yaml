@@ -1,0 +1,52 @@
+name: Deploy CloudFormation Stack
+
+on:
+  push:
+    branches:
+      - main1  # Change this to your target branch
+  workflow_dispatch: 
+env: 
+  CFN_TEMPLATE_FILE_PATH: cfn/infra.yaml
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+          audience: sts.amazonaws.com
+
+      # - name: Create CloudFormation Stack
+      #   id: create_stack
+      #   run: |
+      #     aws cloudformation create-stack \
+      #       --stack-name edgedemo \
+      #       --template-body file://${{ CFN_TEMPLATE_FILE_PATH }} \
+      #       --capabilities CAPABILITY_IAM
+
+      - name: Deploy CloudFormation Stack
+        id : create_stck
+        run: |
+          STACK_NAME="your-stack-name"  # Replace with your stack name
+          TEMPLATE_FILE="path/to/your/template.yaml"  # Replace with the path to your CloudFormation template
+
+          # Check if the stack exists
+          if aws cloudformation describe-stacks --stack-name $STACK_NAME; then
+            echo "Updating existing stack..."
+            aws cloudformation update-stack --stack-name ${{ STACK_NAME }} --template-body file://${{ CFN_TEMPLATE_FILE_PATH }}--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+          else
+            echo "Creating new stack..."
+            aws cloudformation create-stack --stack-name ${{ STACK_NAME }} --template-body file://${{ CFN_TEMPLATE_FILE_PATH }} --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+          fi
+
+      - name: Wait for CloudFormation Stack to Complete
+        run: |
+          aws cloudformation wait stack-create-complete --stack-name ${{ STACK_NAME }}

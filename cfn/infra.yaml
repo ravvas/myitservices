@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: >-
+  Cloudfront Template: Creates cloudfront for IoT Services
+
+
+Parameters:
+
+  OriginPath:
+    Default: iot-dashboard
+    Description: Path in s3 bucket where UI distro files will be stored 
+    Type: String
+
+Resources:
+
+  DataBucket:
+    Type: AWS::S3::Bucket
+
+# Cloudfront Origin Access Identity 
+  cloudfrontoriginaccessidentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: myitservices
+# Bucket policy for S3 Bucket that data from public can be accessed thru cloudfront only
+  DataBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DataBucket
+      PolicyDocument:
+        Statement:
+        - Action:
+          - s3:GetObject
+          Effect: Allow
+          Principal:
+            AWS: !Sub 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${cloudfrontoriginaccessidentity}'
+          Resource: !Sub 'arn:aws:s3:::${DataBucket}/*'
+  
+  EdgedemoDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: Edge Demo cloud front distribution
+        DefaultCacheBehavior:
+          AllowedMethods:
+          - DELETE
+          - GET
+          - HEAD
+          - OPTIONS
+          - PATCH
+          - POST
+          - PUT
+          ForwardedValues:
+            Cookies:
+              Forward: none
+            QueryString: false
+          TargetOriginId: !Sub S3-${DataBucket}/${OriginPath} 
+          TrustedSigners: []
+          ViewerProtocolPolicy: allow-all
+        DefaultRootObject: index.html
+        Enabled: true
+        Origins:
+        - DomainName: !Sub ${DataBucket}.s3.amazonaws.com
+          Id: !Sub S3-${DataBucket}/${OriginPath}
+          OriginPath: !Sub /${OriginPath}
+          S3OriginConfig:
+            OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${cloudfrontoriginaccessidentity}
+        PriceClass: PriceClass_All
+        Restrictions:
+          GeoRestriction:
+            RestrictionType: none
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+Outputs:
+  Edgedemourl:
+    Description: cloudfront URL for edgedemo 
+    Value: !GetAtt EdgedemoDistribution.DomainName
+    Export:
+      Name: !Sub '${AWS::StackName}-Edgedemourl'
+  DataBucket:
+    Description: cloudfront URL for edgedemo 
+    Value: !Ref DataBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-DataBucket'
+
+
