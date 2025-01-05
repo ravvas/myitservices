@@ -5,13 +5,14 @@ on:
     branches:
       - main1  # Change this to your target branch
   workflow_dispatch: 
-env: 
-  CFN_TEMPLATE_FILE_PATH: cfn/infra.yaml
-  STACK_NAME: myitservices
+
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env: 
+      CFN_TEMPLATE_FILE_PATH: cfn/infra.yaml
+      STACK_NAME: myitservices
 
     steps:
       - name: Checkout code
