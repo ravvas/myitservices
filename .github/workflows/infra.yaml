@@ -26,13 +26,6 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           audience: sts.amazonaws.com
 
-      # - name: Create CloudFormation Stack
-      #   id: create_stack
-      #   run: |
-      #     aws cloudformation create-stack \
-      #       --stack-name edgedemo \
-      #       --template-body file://${{ CFN_TEMPLATE_FILE_PATH }} \
-      #       --capabilities CAPABILITY_IAM
 
       - name: Deploy CloudFormation Stack
         id : create_stck

@@ -8,6 +8,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env: 
+      DIST_BUCKET : ${{ vars.DIST_BUCKET }}
+      ORIGIN_PATH : ${{ vars.ORIGIN_PATH }}
+      CLOUDFRONT_DISTRIBUTION_ID : ${{CLOUDFRONT_DISTRIBUTION_ID}}
 
     steps:
       - name: Checkout code
@@ -27,13 +31,16 @@ jobs:
           node-version: '20'  # Specify the Node.js version you want to use
 
       - name: Install dependencies
-        run: npm install
+        run: | 
+           - cd src
+           - npm install
+
 
       - name: Build the React app
         run: npm run build
 
       - name: copy build files to s3 
         run: | 
-          - aws s3 rm s3://${DataBucket}/${OriginPath} --recursive
-          - aws s3 sync ./build s3://${DataBucket}/${OriginPath} Deploy to S3
-          - aws cloudfront create-invalidation --distribution-id YOUR_CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
+          - aws s3 rm s3://$DIST_BUCKET/$ORIGIN_PATH --recursive
+          - aws s3 sync ./build s3://$DIST_BUCKET/$ORIGIN_PATH Deploy to S3
+          - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
