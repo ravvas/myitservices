@@ -37,18 +37,15 @@ jobs:
       - name: Deploy CloudFormation Stack
         id : create_stck
         run: |
-          STACK_NAME="your-stack-name"  # Replace with your stack name
-          TEMPLATE_FILE="path/to/your/template.yaml"  # Replace with the path to your CloudFormation template
-
           # Check if the stack exists
-          if aws cloudformation describe-stacks --stack-name ${{ STACK_NAME }} ; then
+          if aws cloudformation describe-stacks --stack-name $STACK_NAME ; then
             echo "Updating existing stack..."
-            aws cloudformation update-stack --stack-name ${{ STACK_NAME }} --template-body file://${{ CFN_TEMPLATE_FILE_PATH }}--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+            aws cloudformation update-stack --stack-name $STACK_NAME --template-body file://${{ CFN_TEMPLATE_FILE_PATH }}--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
           else
             echo "Creating new stack..."
-            aws cloudformation create-stack --stack-name ${{ STACK_NAME }} --template-body file://${{ CFN_TEMPLATE_FILE_PATH }} --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+            aws cloudformation create-stack --stack-name $STACK_NAME --template-body file://${{ CFN_TEMPLATE_FILE_PATH }} --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
           fi
 
       - name: Wait for CloudFormation Stack to Complete
         run: |
-          aws cloudformation wait stack-create-complete --stack-name ${{ STACK_NAME }}
+          aws cloudformation wait stack-create-complete --stack-name $STACK_NAME
