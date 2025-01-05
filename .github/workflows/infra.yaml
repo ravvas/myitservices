@@ -40,7 +40,7 @@ jobs:
           TEMPLATE_FILE="path/to/your/template.yaml"  # Replace with the path to your CloudFormation template
 
           # Check if the stack exists
-          if aws cloudformation describe-stacks --stack-name $STACK_NAME; then
+          if aws cloudformation describe-stacks --stack-name ${{ STACK_NAME }} ; then
             echo "Updating existing stack..."
             aws cloudformation update-stack --stack-name ${{ STACK_NAME }} --template-body file://${{ CFN_TEMPLATE_FILE_PATH }}--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
           else
