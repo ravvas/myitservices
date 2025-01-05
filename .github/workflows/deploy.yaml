@@ -3,7 +3,7 @@ name: Deploy to AWS CloudFront
 on:
   push:
     branches:
-      - main1  # Change this to your default branch if necessary
+      - main  # Change this to your default branch if necessary
   workflow_dispatch: 
 
 jobs:
