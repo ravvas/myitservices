@@ -3,7 +3,9 @@ name: Deploy CloudFormation Stack
 on:
   push:
     branches:
-      - main1  # Change this to your target branch
+      - main  
+    paths: 
+      - 'cfn/edgedemo.yaml'
   workflow_dispatch: 
 
 
@@ -11,7 +13,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env: 
-      CFN_TEMPLATE_FILE_PATH: cfn/infra.yaml
+      CFN_TEMPLATE_FILE_PATH: cfn/edgedemo.yaml
       STACK_NAME: myitservices
 
     steps:
