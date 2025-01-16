@@ -35,7 +35,12 @@ jobs:
           # Check if the stack exists
           if aws cloudformation describe-stacks --stack-name $STACK_NAME ; then
             echo "Updating existing stack..."
-            aws cloudformation update-stack --stack-name $STACK_NAME --template-body file://$CFN_TEMPLATE_FILE_PATH --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+            TIMESTAMP=$(date +'%Y%m%d%H%M%S')
+            CHANGE_SET_NAME="change-set-${TIMESTAMP}"
+            aws cloudformation create-change-set --stack-name $STACK_NAME --template-body file://$CFN_TEMPLATE_FILE_PATH --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --change-set-name "$CHANGE_SET_NAME"
+            aws cloudformation describe-change-set --change-set-name "$CHANGE_SET_NAME" --stack-name $STACK_NAME
+            aws cloudformation execute-change-set --change-set-name "$CHANGE_SET_NAME" --stack-name $STACK_NAME
+            # aws cloudformation update-stack --stack-name $STACK_NAME --template-body file://$CFN_TEMPLATE_FILE_PATH --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
           else
             echo "Creating new stack..."
             aws cloudformation create-stack --stack-name $STACK_NAME --template-body file://$CFN_TEMPLATE_FILE_PATH --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
