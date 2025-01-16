@@ -8,12 +8,11 @@ on:
       - 'cfn/edgedemo.yaml'
   workflow_dispatch: 
 
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     env: 
-      CFN_TEMPLATE_FILE_PATH: cfn/edgedemo.yaml
+      TEMPLATE_BODY: cfn/edgedemo.yaml
       STACK_NAME: myitservices
 
     steps:
@@ -28,24 +27,75 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           audience: sts.amazonaws.com
 
-
-      - name: Deploy CloudFormation Stack
-        id : create_stck
+      - name: Create Change Set
+        id: create_change_set
         run: |
-          # Check if the stack exists
-          if aws cloudformation describe-stacks --stack-name $STACK_NAME ; then
-            echo "Updating existing stack..."
-            TIMESTAMP=$(date +'%Y%m%d%H%M%S')
-            CHANGE_SET_NAME="change-set-${TIMESTAMP}"
-            aws cloudformation create-change-set --stack-name $STACK_NAME --template-body file://$CFN_TEMPLATE_FILE_PATH --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --change-set-name "$CHANGE_SET_NAME"
-            aws cloudformation describe-change-set --change-set-name "$CHANGE_SET_NAME" --stack-name $STACK_NAME
-            aws cloudformation execute-change-set --change-set-name "$CHANGE_SET_NAME" --stack-name $STACK_NAME
-            # aws cloudformation update-stack --stack-name $STACK_NAME --template-body file://$CFN_TEMPLATE_FILE_PATH --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
-          else
-            echo "Creating new stack..."
-            aws cloudformation create-stack --stack-name $STACK_NAME --template-body file://$CFN_TEMPLATE_FILE_PATH --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
-          fi
+          CHANGE_SET_NAME="change-set-${{ github.run_id }}"
+          aws cloudformation create-change-set \
+            --stack-name $STACK_NAME \
+            --template-body file://$TEMPLATE_BODY \
+            --change-set-name $CHANGE_SET_NAME \
+            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 
-      - name: Wait for CloudFormation Stack to Complete
+          echo "Change set created: $CHANGE_SET_NAME"
+          echo "::set-output name=change_set_name::$CHANGE_SET_NAME"
+
+      - name: Wait for Change Set to Complete
         run: |
-          aws cloudformation wait stack-create-complete --stack-name $STACK_NAME
+          CHANGE_SET_NAME="${{ steps.create_change_set.outputs.change_set_name }}"
+
+          while true; do
+            STATUS=$(aws cloudformation describe-change-set --change-set-name $CHANGE_SET_NAME --stack-name $STACK_NAME --query 'Status' --output text)
+            echo "Current change set status: $STATUS"
+            if [[ "$STATUS" == "CREATE_COMPLETE" ]]; then
+              echo "Change set is complete."
+              break
+            elif [[ "$STATUS" == "FAILED" ]]; then
+              echo "Change set creation failed."
+              exit 1
+            fi
+            sleep 10  # Wait for 10 seconds before checking again
+          done
+          aws cloudformation describe-change-set --change-set-name "$CHANGE_SET_NAME" --stack-name "$STACK_NAME"
+
+      - name: Execute Change Set
+        run: |
+          CHANGE_SET_NAME="${{ steps.create_change_set.outputs.change_set_name }}"
+          aws cloudformation execute-change-set --change-set-name $CHANGE_SET_NAME --stack-name $STACK_NAME
+          echo "Change set executed."
+          while true; do
+            STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].StackStatus" --output text)
+            echo "Current stack status: $STATUS"
+            
+            if [[ "$STATUS" == "UPDATE_COMPLETE" ]]; then
+                echo "Change set execution completed successfully."
+                break
+            elif [[ "$STATUS" == "UPDATE_FAILED" ]]; then
+                echo "Change set execution failed."
+                exit 1
+            fi
+            
+            sleep 10  # Wait for 10 seconds before checking again
+          done
+
+
+      # - name: Deploy CloudFormation Stack
+      #   id : create_stck
+      #   run: |
+      #     # Check if the stack exists
+      #     if aws cloudformation describe-stacks --stack-name $STACK_NAME ; then
+      #       echo "Updating existing stack..."
+      #       TIMESTAMP=$(date +'%Y%m%d%H%M%S')
+      #       CHANGE_SET_NAME="change-set-${TIMESTAMP}"
+      #       aws cloudformation create-change-set --stack-name $STACK_NAME --template-body file://$CFN_TEMPLATE_FILE_PATH --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --change-set-name "$CHANGE_SET_NAME"
+      #       aws cloudformation describe-change-set --change-set-name "$CHANGE_SET_NAME" --stack-name $STACK_NAME
+      #       aws cloudformation execute-change-set --change-set-name "$CHANGE_SET_NAME" --stack-name $STACK_NAME
+      #       # aws cloudformation update-stack --stack-name $STACK_NAME --template-body file://$CFN_TEMPLATE_FILE_PATH --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+      #     else
+      #       echo "Creating new stack..."
+      #       aws cloudformation create-stack --stack-name $STACK_NAME --template-body file://$CFN_TEMPLATE_FILE_PATH --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+      #     fi
+
+      # - name: Wait for CloudFormation Stack to Complete
+      #   run: |
+      #     aws cloudformation wait stack-create-complete --stack-name $STACK_NAME

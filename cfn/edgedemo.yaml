@@ -3,7 +3,6 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: >-
   Cloudfront Template: Creates cloudfront for IoT Services
 
-
 Parameters:
 
   OriginPath:
@@ -15,29 +14,30 @@ Resources:
 
   DataBucket:
     Type: AWS::S3::Bucket
-  # DataBucket1:
-  #   Type: AWS::S3::Bucket
 
+  DataBucket1:
+    Type: AWS::S3::Bucket
 
-# Cloudfront Origin Access Identity 
-  cloudfrontoriginaccessidentity:
+  # Cloudfront Origin Access Identity 
+  CloudFrontOriginAccessIdentity:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
     Properties:
       CloudFrontOriginAccessIdentityConfig:
         Comment: myitservices
-# Bucket policy for S3 Bucket that data from public can be accessed thru cloudfront only
+
+  # Bucket policy for S3 Bucket that data from public can be accessed thru cloudfront only
   DataBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
       Bucket: !Ref DataBucket
       PolicyDocument:
         Statement:
-        - Action:
-          - s3:GetObject
-          Effect: Allow
-          Principal:
-            AWS: !Sub 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${cloudfrontoriginaccessidentity}'
-          Resource: !Sub 'arn:aws:s3:::${DataBucket}/*'
+          - Action:
+              - s3:GetObject
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginAccessIdentity}'
+            Resource: !Sub 'arn:aws:s3:::${DataBucket}/*'
   
   EdgedemoDistribution:
     Type: AWS::CloudFront::Distribution
@@ -46,28 +46,28 @@ Resources:
         Comment: Edge Demo cloud front distribution
         DefaultCacheBehavior:
           AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
+            - DELETE
+            - GET
+            - HEAD
+            - OPTIONS
+            - PATCH
+            - POST
+            - PUT
           ForwardedValues:
             Cookies:
               Forward: none
             QueryString: false
-          TargetOriginId: !Sub S3-${DataBucket}/${OriginPath} 
+          TargetOriginId: !Sub 'S3-${DataBucket}/${OriginPath}' 
           TrustedSigners: []
           ViewerProtocolPolicy: allow-all
         DefaultRootObject: index.html
         Enabled: true
         Origins:
-        - DomainName: !Sub ${DataBucket}.s3.amazonaws.com
-          Id: !Sub S3-${DataBucket}/${OriginPath}
-          OriginPath: !Sub /${OriginPath}
-          S3OriginConfig:
-            OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${cloudfrontoriginaccessidentity}
+          - DomainName: !Sub '${DataBucket}.s3.amazonaws.com'
+            Id: !Sub 'S3-${DataBucket}/${OriginPath}'
+            OriginPath: !Sub '/${OriginPath}'
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
         PriceClass: PriceClass_All
         Restrictions:
           GeoRestriction:
@@ -81,10 +81,9 @@ Outputs:
     Value: !GetAtt EdgedemoDistribution.DomainName
     Export:
       Name: !Sub '${AWS::StackName}-Edgedemourl'
-  DataBucket:
-    Description: cloudfront URL for edgedemo 
+  
+  DataBucketOutput:
+    Description: S3 Bucket Name
     Value: !Ref DataBucket
     Export:
       Name: !Sub '${AWS::StackName}-DataBucket'
-
-
