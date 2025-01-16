@@ -15,6 +15,8 @@ Resources:
 
   DataBucket:
     Type: AWS::S3::Bucket
+  DataBucket1:
+    Type: AWS::S3::Bucket
 
 
 # Cloudfront Origin Access Identity 
