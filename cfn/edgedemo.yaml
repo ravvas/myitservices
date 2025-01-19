@@ -72,6 +72,9 @@ Resources:
             RestrictionType: none
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
+
+# Create User Pool 
+
   UserPool:
     Type: AWS::Cognito::UserPool
     Properties:
@@ -83,6 +86,13 @@ Resources:
         Name: email
         Required: true
       UserPoolName: IotUiUserPool
+# Create client for Ui Application 
+  ReactAppClient:
+    Properties:
+      GenerateSecret: false
+      RefreshTokenValidity: 200
+      UserPoolId: !Ref UserPool
+    Type: AWS::Cognito::UserPoolClient
 
 Outputs:
   Edgedemourl:
