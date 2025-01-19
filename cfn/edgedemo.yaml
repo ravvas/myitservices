@@ -15,8 +15,6 @@ Resources:
   DataBucket:
     Type: AWS::S3::Bucket
 
-  DataBucket1:
-    Type: AWS::S3::Bucket
 
   # Cloudfront Origin Access Identity 
   CloudFrontOriginAccessIdentity:
@@ -74,6 +72,17 @@ Resources:
             RestrictionType: none
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      AutoVerifiedAttributes:
+      - email
+      MfaConfiguration: 'OFF'
+      Schema:
+      - AttributeDataType: String
+        Name: email
+        Required: true
+      UserPoolName: IotUiUserPool
 
 Outputs:
   Edgedemourl:
