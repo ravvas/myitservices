@@ -93,6 +93,16 @@ Resources:
       RefreshTokenValidity: 200
       UserPoolId: !Ref UserPool
     Type: AWS::Cognito::UserPoolClient
+# Create Identity pool correspondong to User Pool
+
+  IdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      AllowUnauthenticatedIdentities: false
+      CognitoIdentityProviders:
+      - ClientId: !Ref ReactAppClient
+        ProviderName: !GetAtt UserPool.ProviderName
+      IdentityPoolName: IotUiIdentityPool
 
 Outputs:
   Edgedemourl:
